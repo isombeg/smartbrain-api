@@ -96,7 +96,7 @@ app.get(
     }
 )
 
-app.post(
+app.put(
     '/image',
     (req, res) => {
         const {id} = req.body;
