@@ -18,27 +18,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const database = {
-    users: [
-        {
-            id: '123',
-            name: 'John',
-            email: 'john@gmail.com',
-            password: 'cookies',
-            entries: 0,
-            joined: new Date()
-        },
-        {
-            id: '124',
-            name: 'Sally',
-            email: 'sally@gmail.com',
-            password: 'bananas',
-            entries: 0,
-            joined: new Date()
-        }
-    ],
-}
-
 app.get(
     '/',
     (req, res) => {
@@ -50,26 +29,21 @@ app.get(
 app.post(
     '/signin',
     (req, res) => {
-        console.log('requested /signin');
-        // if(req.body.email === database.users[0].email &&
-        //     req.body.password === database.users[0].password){
-        //         res.json('success');
-        //     }
-        // else{
-        //     res.status(400).json("error logging in")
-        // }
-
-        for(user of database.users){
-            if(req.body.email === user.email &&
-                req.body.password === user.password){
-                    console.log("Signing in ", user.name)
-                    return res.json(user);
-                }
-        }
-
-        res.status(400).json("error logging in");
-
-
+        db.select('email', 'hash').from('login')
+            .where('email', '=', req.body.email)
+            .then(data => {
+                    const isValid = bcrypt.compareSync(req.body.password, data[0].hash);
+                    if(isValid){
+                        return db.select('*').from('users')
+                            .where('email', '=', req.body.email)
+                            .then(user => {
+                                res.json(user[0])
+                            })
+                            .catch(err => res.status(400).json('unable to get user'))
+                    }
+                    else res.status(400).json('wrong credentials');
+            })
+            .catch(err => res.status(400).json('wrong credentials'))
     }
 )
 
@@ -77,23 +51,32 @@ app.post(
     '/register',
     (req, res) => {
         const {email, name, password} = req.body;
-        db('users')
-            .returning('*')
-            .insert(
-                {
-                    email: email,
-                    name: name,
-                    joined: new Date()
-                }
-            )
-            .then(
-                user => {
-                    res.json(user[0]);
-                }
-            )
-            .catch(
-                err => res.status(400).json('Unable to register')
-            )
+        const hash = bcrypt.hashSync(password);
+        
+        db.transaction(
+            trx => {
+                trx.insert({
+                    hash: hash,
+                    email: email
+                })
+                .into('login')
+                .returning('email')
+                .then(loginEmail => {
+                    db('users')
+                        .returning('*')
+                        .insert(
+                            {
+                                email: loginEmail[0],
+                                name: name,
+                                joined: new Date()
+                            }
+                        )
+                        .then(user => res.json(user[0]))
+                })
+                .then(trx.commit)
+                .catch(trx.rollback)
+            }
+        ).catch(err => res.status(400).json('Unable to register'))
     }
 )
 
@@ -102,13 +85,16 @@ app.get(
     (req, res) => {
         const {id} = req.params;
         
-        database.users.forEach(user => {
-            if(user.id === id){
-                return res.json(user);
+        db.select('*').from('users').where(
+            {id: id}
+        ).then(
+            user => {
+                if(user.length){
+                    res.json(user[0]);
+                }
+                else res.status(400).json('no such user');
             }
-        })
-        
-        res.status(400).json('no such user');
+        ).catch(err => res.status(400)).json("error getting user")
         
     }
 )
@@ -118,14 +104,18 @@ app.put(
     (req, res) => {
         const {id} = req.body;
         
-        database.users.forEach(user => {
-            if(user.id === id){
-                user.entries++;
-                return res.json(user.entries);
-            }
-        })
-
-        res.status(400).json('user not found');
+        db('users')
+            .where('id', '=', id)
+            .increment('entries', 1)
+            .returning('entries')
+            .then(
+                entries => {
+                    if(entries.length)
+                        res.json(entries[0]);
+                    else res.status(400).json("unable to get entries");
+                }
+            )
+            .catch(err => res.status(400).json("unable to get entries"))
     }
 )
 
