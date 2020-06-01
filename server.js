@@ -31,4 +31,4 @@ app.post('/register', registerHandler(db, bcrypt));
 app.get('/profile/:id', profileHandler(db));
 app.put('/image', imageHandler(db));
 
-app.listen(3001)
+app.listen(process.env.PORT || 3001);
