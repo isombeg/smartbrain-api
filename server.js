@@ -29,6 +29,7 @@ app.get('/', rootHandler);
 app.post('/signin', signinHandler(db, bcrypt));
 app.post('/register', registerHandler(db, bcrypt));
 app.get('/profile/:id', profileHandler(db));
+app.post('/detect', faceDetect);
 app.put('/image', imageHandler(db));
 
 app.listen(process.env.PORT || 3001);
