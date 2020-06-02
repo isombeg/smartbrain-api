@@ -1,20 +1,3 @@
-import Clarifai from 'clarifai';
-
-const app = new Clarifai.App({
-    apiKey: 'ffae0e82726a4f91855cf68633e4b26f'
-});
-
-const faceDetect = () => (req, res) => {
-    const {imageUrl} = req.body;
-    
-    app.models.predict(
-        Clarifai.FACE_DETECT_MODEL,
-        imageUrl
-    )
-        .then(response => res.json(response))
-        .catch(console.log);
-}
-
 // Handler pulls users submission count from users database
 const imageHandler = db => (req, res) => {
     console.log('requested /image');
