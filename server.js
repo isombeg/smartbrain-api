@@ -12,6 +12,8 @@ const profileHandler = require('./controllers/profile');
 const registerHandler = require('./controllers/register');
 const faceDetect = require('./controllers/faceDetect');
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
 const db = knex({
     client: 'pg',
     connection: {
