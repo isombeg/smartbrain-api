@@ -8,7 +8,7 @@ const faceDetect = (Clarifai, app) => (req, res) => {
         imageUrl
     )
         .then(response => res.json(response))
-        .catch(err => res.status(400).json("Error fulfilling prediction"));
+        .catch(err => res.status(400).json());
 }
 
 module.exports = faceDetect;

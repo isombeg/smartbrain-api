@@ -38,5 +38,4 @@ app.get('/profile/:id', profileHandler(db));
 app.post('/detect', faceDetect(Clarifai, clarifaiApp));
 app.put('/image', imageHandler(db));
 
-// app.listen(process.env.PORT || 3001);
-app.listen(3001);
+app.listen(process.env.PORT || 3001);
